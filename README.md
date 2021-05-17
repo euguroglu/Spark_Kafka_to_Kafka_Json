@@ -1,7 +1,21 @@
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import from_json, col, expr
-from pyspark.sql.types import StructType, StructField, StringType, LongType, DoubleType, IntegerType, ArrayType
+# SparkStream Kafka to Kafka Json Data Example
+### Dataflow Pipeline
+![](pipeline.JPG)
 
+### Summary
+
+This is kafka source and kafka sink example for spark application. In this example Json sample data (invoice data, see below) published to kafka topics using kafka console producer. Spark streaming application read stream from kafka topics and make some transformations to extract valuable data to calculate customer loyalty points according to transaction fee from the invoice data. Finally transformed data send to another kafka topics. We check results by using kafka console consumer.
+
+### Task List
+
+- [x] Create kafka topics
+```
+/home/enes/Software/kafka_2.12-2.7.0/bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic invoices
+/home/enes/Software/kafka_2.12-2.7.0/bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic notifications
+```
+
+- [x] Create spark session (You can use ".master("local[*])" instead of yarn if you are running Spark on standalone mode")
+```
 if __name__ == "__main__":
     spark = SparkSession \
         .builder \
@@ -9,7 +23,9 @@ if __name__ == "__main__":
         .config("spark.streaming.stop.stopGracefullyOnShutdown", "true") \
         .master("yarn") \
         .getOrCreate()
-
+```
+- [x] Define schema
+```
 #Define schema for invoice data
     schema = StructType([
     StructField("InvoiceNumber", StringType()),
@@ -42,6 +58,9 @@ if __name__ == "__main__":
     ]))),
 ])
 
+```
+- [x] Read data from kafka topic
+```
 # very important note: we can change readStream to read if we want to print dataframe at anypoint otherwise streaming data frame can not be shown with .show() method
     kafka_df = spark.readStream \
         .format("kafka") \
@@ -50,8 +69,9 @@ if __name__ == "__main__":
         .option("startingOffsets", "earliest") \
         .load()
 
-    #kafka_df.printSchema()
-
+```
+- [x] Implement transformations
+```
 #Transfrom data and add new column to calculate loyalty points earned by customer for transaction
     value_df = kafka_df.select(from_json(col("value").cast("string"), schema).alias("value"))
     notification_df = value_df.select("value.InvoiceNumber", "value.CustomerCardNo", "value.TotalAmount") \
@@ -62,8 +82,11 @@ if __name__ == "__main__":
                                                  'CustomerCardNo', CustomerCardNo,
                                                  'TotalAmount', TotalAmount,
                                                  'EarnedLoyaltyPoints', TotalAmount * 0.2)) as value""")
+```
 
-#Write data into another kafka topics 
+- [x] Writestream to another kafka topic
+```
+#Write data into another kafka topics
     notification_writer_query = kafka_target_df \
             .writeStream \
             .queryName("Notification Writer") \
@@ -75,3 +98,32 @@ if __name__ == "__main__":
             .start()
 
     notification_writer_query.awaitTermination()
+```
+
+- [x] Start kafka console producer
+
+- [x] Send one sample of data
+
+- [x] Start kafka console consumer
+
+- [x] Check results
+
+### Code Description
+
+kafka2kafka_sparkstream.py is spark script to make desired transformations. Note that in the spark script we are implementing deserialization and serialization when we collect data from kafka and before sending it to the kafka again.
+
+### Running
+
+1. Create kafka topics
+
+2. Start spark job
+```
+spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.1.1 kafka2kafka_sparkstream.py
+```
+3. Start kafka producer
+
+4. Send one line of data
+
+5. Start kafka consumer
+
+6. Check result
