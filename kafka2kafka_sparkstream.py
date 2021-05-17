@@ -7,6 +7,7 @@ if __name__ == "__main__":
         .builder \
         .appName("Kafka stream") \
         .config("spark.streaming.stop.stopGracefullyOnShutdown", "true") \
+        .master("yarn") \
         .getOrCreate()
 
     schema = StructType([
@@ -50,6 +51,7 @@ if __name__ == "__main__":
 
     #kafka_df.printSchema()
 
+#Transfrom data and add new column to calculate loyalty points earned by customer for transaction
     value_df = kafka_df.select(from_json(col("value").cast("string"), schema).alias("value"))
     notification_df = value_df.select("value.InvoiceNumber", "value.CustomerCardNo", "value.TotalAmount") \
     .withColumn("EarnedLoyaltyPoints", expr("TotalAmount*0.2"))
@@ -68,7 +70,7 @@ if __name__ == "__main__":
             .option("kafka.bootstrap.servers", "localhost:9092") \
             .option("topic", "notifications") \
             .outputMode("append") \
-            .option("checkpointLocation", "chk-point-dir") \
+            .option("checkpointLocation", "Kafkakafka/chk-point-dir") \
             .start()
 
     notification_writer_query.awaitTermination()
