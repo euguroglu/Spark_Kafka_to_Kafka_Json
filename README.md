@@ -6,6 +6,55 @@
 
 This is kafka source and kafka sink example for spark application. In this example Json sample data (invoice data, see below) published to kafka topics using kafka console producer. Spark streaming application read stream from kafka topics and make some transformations to extract valuable data to calculate customer loyalty points according to transaction fee from the invoice data. Finally transformed data send to another kafka topics. We check results by using kafka console consumer.
 
+```json
+{
+  "InvoiceNumber": "51402977",
+  "CreatedTime": 1595688900348,
+  "StoreID": "STR7188",
+  "PosID": "POS956",
+  "CashierID": "OAS134",
+  "CustomerType": "PRIME",
+  "CustomerCardNo": "4629185211",
+  "TotalAmount": 11114,
+  "NumberOfItems": 4,
+  "PaymentMethod": "CARD",
+  "TaxableAmount": 11114,
+  "CGST": 277.85,
+  "SGST": 277.85,
+  "CESS": 13.8925,
+  "DeliveryType": "TAKEAWAY",
+  "InvoiceLineItems": [
+    {
+      "ItemCode": "458",
+      "ItemDescription": "Wine glass",
+      "ItemPrice": 1644,
+      "ItemQty": 2,
+      "TotalValue": 3288
+    },
+    {
+      "ItemCode": "283",
+      "ItemDescription": "Portable Lamps",
+      "ItemPrice": 2236,
+      "ItemQty": 1,
+      "TotalValue": 2236
+    },
+    {
+      "ItemCode": "498",
+      "ItemDescription": "Carving knifes",
+      "ItemPrice": 1424,
+      "ItemQty": 2,
+      "TotalValue": 2848
+    },
+    {
+      "ItemCode": "523",
+      "ItemDescription": "Oil-lamp clock",
+      "ItemPrice": 1371,
+      "ItemQty": 2,
+      "TotalValue": 2742
+    }
+  ]
+}
+```
 ### Task List
 
 - [x] Create kafka topics
@@ -127,3 +176,10 @@ spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.1.1 kafka2k
 5. Start kafka consumer
 
 6. Check result
+```json
+{
+  "CustomerCardNo": "4629185211",
+  "TotalAmount": 11114,
+  "EarnedLoyaltyPoints": 2222.8
+}
+```
